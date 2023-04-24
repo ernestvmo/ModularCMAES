@@ -197,6 +197,13 @@ def run_cma(
     break_conditions = [None] * len(lambda_)
 
     for _ in range(iterations):
+        if sharing_point is not None:
+            if _ != 0 and _ % sharing_point == 0:
+                fitnesses = [CMAES[i].parameters.fopt for i in range(len(CMAES))]
+                w, b = np.argmax(fitnesses), np.argmin(fitnesses)
+                CMAES[w].parameters.C = np.copy(CMAES[b].parameters.C)
+                CMAES[w].parameters.sigma = CMAES[b].parameters.sigma
+
         for i in range(len(CMAES)):
             if corr:
                 CMAES[i].parameters.svm = corr
@@ -268,7 +275,6 @@ def normal_cma_benchmark(
     iterations: int,
     budget: int,
     lambda_: int,
-    mu_: int,
 ):
     problem = ioh.get_problem(
         fid=problem_id,
@@ -285,9 +291,7 @@ def normal_cma_benchmark(
     )
     problem.attach_logger(logger)
 
-    params = initialize_parameters(
-        problem=problem, budget=budget, lambda_=lambda_
-    )
+    params = initialize_parameters(problem=problem, budget=budget, lambda_=lambda_)
 
     cmaes = ModularCMAES(fitness_func=problem, parameters=params)
     # Maybe just call run here?
@@ -362,7 +366,14 @@ if __name__ == "__main__":
     # parser.add_argument("-m", "--mu_", help="size of parents to use", nargs='*', default=100, type=int)
     # parser.add_argument("-p", "--subpop", help="size of subpopulation parents and offspring\neg: [100, 50, 20, 10, 5]", nargs='+', default=None, type=int)
     # parser.add_argument("-sn", "--sub_size", help="number of subpopulation", nargs='?', default=10, type=int)
-    # parser.add_argument("-sp", "--info_sharing_point", help="when to share info between subpops", nargs='?', default=0, type=int)
+    parser.add_argument(
+        "-sp",
+        "--info_sharing_point",
+        help="when to share info between subpops",
+        nargs="?",
+        default=None,
+        type=int,
+    )
     args = parser.parse_args()
 
     # TODO update lambda_ and mu_ arguments for subpopulation
@@ -392,7 +403,7 @@ if __name__ == "__main__":
         sigma0=args.sigma0,
         bound_corr=args.bound_corr,
         init_corr=args.init_corr,
-        sharing_point=None,
+        sharing_point=args.info_sharing_point,
         logger_info={"name": args.algo_name, "description": ""},
     )
     print("Subpopulation CMA-ES: complete")

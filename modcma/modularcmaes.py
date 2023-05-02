@@ -238,7 +238,7 @@ class ModularCMAES:
             for i in I:
                 # X[i] = self.ortho_projection(X[i], Y[i])
                 X[i] = ortho_projection(
-                    centroid=self.parameters.m,
+                    centroid=self.parameters.m.reshape(X[i].shape),
                     coefs=self.parameters.area_coefs,
                     point=X[i],
                     target=self.parameters.subpopulation_target,
@@ -292,12 +292,14 @@ class ModularCMAES:
 
         if self.parameters.initialization_correction:
             x = self.sub_area_correction(x, self.parameters.initialization_correction)
-            # inverse such that y and z match the new x points
 
         x, n_out_of_bounds = correct_bounds(
             x, self.parameters.ub, self.parameters.lb, self.parameters.bound_correction
         )
         self.parameters.n_out_of_bounds += n_out_of_bounds
+
+        y = (x - self.parameters.m) / s
+        z = (np.linalg.lstsq(self.parameters.B, y, rcond=None)[0]) / self.parameters.D
 
         if not self.parameters.sequential and self.parameters.vectorized_fitness:
             f = self._fitness_func(x.T)

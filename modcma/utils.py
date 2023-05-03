@@ -83,7 +83,6 @@ class AnyOf(Descriptor):
             )
         super().__set__(instance, value)
 
-
 class AnnotatedStructMeta(type):
     """Metaclass for class for AnnotatedStruct.
 

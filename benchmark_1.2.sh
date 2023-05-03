@@ -1,5 +1,5 @@
 echo 'BENCHMARK START'
-for i in {1..15}
+for i in {1..3}
 do
     echo iter $i
     for j in {3,4}

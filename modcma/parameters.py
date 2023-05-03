@@ -19,7 +19,6 @@ from .sampling import (
     Halton
 )
 
-
 class Parameters(AnnotatedStruct):
     """AnnotatedStruct object for holding the parameters for the ModularCMAES.
 
@@ -90,6 +89,8 @@ class Parameters(AnnotatedStruct):
             and S. Chen. Evolution strategies with thresheld convergence. In
             Evolutionary Computation (CEC), 2015 IEEE Congress on, pages 2097–
             2104, May 2015.
+    initialization_correction: str = (None, 'svm',)
+        Specifying whether to bounds subpopulation initialization to a SVM region or not. Prevents subpopulation from overlapping each other when they are mutated.
     bound_correction: str = (None, 'saturate', 'unif_resample', 'COTN', 'toroidal', 'mirror',)
         Specifying whether to use bound correction to enforce ub and lb
     orthogonal: bool = False
@@ -263,6 +264,8 @@ class Parameters(AnnotatedStruct):
     elitist: bool = False
     sequential: bool = False
     threshold_convergence: bool = False
+    initialization_correction: (
+        None, "svm") = None
     bound_correction: (
         None, "saturate", "unif_resample", "COTN", "toroidal", "mirror") = None
     orthogonal: bool = False
@@ -285,6 +288,10 @@ class Parameters(AnnotatedStruct):
     vectorized_fitness: bool = False
     sobol: TypeVar("Sobol") = None
     halton: TypeVar("Halton") = None
+
+    svm: TypeVar('SVC') = None
+    subpopulation_target: int = None
+    area_coefs: list = None
 
     __modules__ = (
         "active",

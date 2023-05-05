@@ -7,9 +7,10 @@ do
         for d in {5,20}
         do
             python main.py -pid $j -iid $i -d $d -pt 1 -n 'ModCMA'
-            python main.py -pid $j -iid $i -d $d -pt 2 -n 'SP[50]-CMA'
-            python main.py -pid $j -iid $i -d $d -pt 3 -n 'SP[20]-CMA'
-            python main.py -pid $j -iid $i -d $d -pt 4 -n 'SP[10]-CMA'
+            python main.py -pid $j -iid $i -d $d -pt 1 -n 'ModCMA-[0]' -im center
+            python main.py -pid $j -iid $i -d $d -pt 2 -n 'SP-CMA[50]'
+            python main.py -pid $j -iid $i -d $d -pt 3 -n 'SP-CMA[20]'
+            python main.py -pid $j -iid $i -d $d -pt 4 -n 'SP-CMA[10]'
         done
     done
 done

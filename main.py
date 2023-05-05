@@ -90,15 +90,13 @@ def initialize_centroids(
     problem: ioh.ProblemType, sub_pop: int, init_method: str
 ) -> np.ndarray:
     if init_method == "uniform":
-        return np.float64(
-            [
-                np.random.uniform(
-                    problem.bounds.lb,
-                    problem.bounds.ub,
-                    (problem.meta_data.n_variables,),
-                )
-                for _ in range(sub_pop)
-            ]
+        return np.random.uniform(
+            problem.bounds.lb,
+            problem.bounds.ub,
+            (
+                sub_pop,
+                problem.meta_data.n_variables,
+            ),
         )
     elif init_method == "lhs":
         return np.float64(
@@ -108,6 +106,24 @@ def initialize_centroids(
                 u_bounds=problem.bounds.ub,
             )
         )
+    elif init_method == "sobol":
+        return np.float64(
+            scale(
+                Sobol(d=problem.meta_data.n_variables).random(sub_pop),
+                l_bounds=problem.bounds.lb,
+                u_bounds=problem.bounds.ub,
+            )
+        )
+    elif init_method == "halton":
+        return np.float64(
+            scale(
+                Halton(d=problem.meta_data.n_variables).random(sub_pop),
+                l_bounds=problem.bounds.lb,
+                u_bounds=problem.bounds.ub,
+            )
+        )
+    elif init_method == "center":
+        return np.zeros((sub_pop, problem.meta_data.n_variables))
     else:
         raise ValueError("Incorrect initialization technique.")
 
@@ -322,7 +338,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-d",
         "--dimension",
-        help="the dimension of the problem we are solving {5/20}",
+        help="the dimension of the problem we are solving {2/5/20}",
         default=5,
         type=int,
     )
@@ -349,9 +365,16 @@ if __name__ == "__main__":
         default=1,
         type=int,
     )
-    parser.add_argument("-im", "--init_method", help="", default="uniform", type=str)
+    parser.add_argument(
+        "-im",
+        "--init_method",
+        help="",
+        default="uniform",
+        choices=["uniform", "lhs", "sobol", "halton", "center"],
+        type=str,
+    )
     parser.add_argument("-s", "--sigma0", help="", default=0.2, type=float)
-    parser.add_argument("-bc", "--bound_corr", help="", default=None, type=str)
+    parser.add_argument("-bc", "--bound_corr", help="", default="saturate", type=str)
     parser.add_argument(
         "-ic",
         "--init_corr",
@@ -362,7 +385,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "-n", "--algo_name", help="algorithm name", default="ModCMA", type=str
     )
-    # parser.add_argument("-l", "--lambda_", help="size of offsprings to generate", nargs='*', default=100, type=int)
+    parser.add_argument(
+        "-l",
+        "--lambda_",
+        help="size of offsprings to generate",
+        nargs="*",
+        default=100,
+        type=int,
+    )
     # parser.add_argument("-m", "--mu_", help="size of parents to use", nargs='*', default=100, type=int)
     # parser.add_argument("-p", "--subpop", help="size of subpopulation parents and offspring\neg: [100, 50, 20, 10, 5]", nargs='+', default=None, type=int)
     # parser.add_argument("-sn", "--sub_size", help="number of subpopulation", nargs='?', default=10, type=int)
@@ -380,7 +410,7 @@ if __name__ == "__main__":
 
     if args.subpop_type == 1:
         # no subpopulations, hard-coded size (hard-coded for now)
-        lambda_ = [100]
+        lambda_ = args.lambda_
     elif args.subpop_type == 2:
         # no subpopulations, hard-coded size (hard-coded for now)
         lambda_ = [50, 50]

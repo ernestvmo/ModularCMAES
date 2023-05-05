@@ -1,5 +1,5 @@
 import ioh
-from scipy.stats.qmc import scale, LatinHypercube as lhs
+from scipy.stats.qmc import scale, LatinHypercube as lhs, Sobol, Halton
 from sklearn.svm import SVC
 from modcma import Parameters, Population, ModularCMAES
 from argparse import ArgumentParser
@@ -285,36 +285,6 @@ def main(
         )
 
 
-def normal_cma_benchmark(
-    problem_id: int,
-    dimension: int,
-    iterations: int,
-    budget: int,
-    lambda_: int,
-):
-    problem = ioh.get_problem(
-        fid=problem_id,
-        instance=1,
-        dimension=dimension,
-        problem_type=ioh.ProblemType.BBOB,
-    )
-
-    logger = ioh.logger.Analyzer(
-        root="data",
-        folder_name="run",
-        algorithm_name="ModCMAES",
-        algorithm_info="default version of ModCMAES benchmarked with default parameters.",
-    )
-    problem.attach_logger(logger)
-
-    params = initialize_parameters(problem=problem, budget=budget, lambda_=lambda_)
-
-    cmaes = ModularCMAES(fitness_func=problem, parameters=params)
-    # Maybe just call run here?
-    for _ in range(iterations):
-        cmaes.step()
-
-
 if __name__ == "__main__":
     # TODO: seed
     np.random.seed(7)
@@ -389,7 +359,6 @@ if __name__ == "__main__":
         "-l",
         "--lambda_",
         help="size of offsprings to generate",
-        nargs="*",
         default=100,
         type=int,
     )
@@ -410,7 +379,7 @@ if __name__ == "__main__":
 
     if args.subpop_type == 1:
         # no subpopulations, hard-coded size (hard-coded for now)
-        lambda_ = args.lambda_
+        lambda_ = [args.lambda_]
     elif args.subpop_type == 2:
         # no subpopulations, hard-coded size (hard-coded for now)
         lambda_ = [50, 50]

@@ -202,12 +202,15 @@ def initialize(
         cmaes.append(ModularCMAES(fitness_func=problem, parameters=params))
 
     return run_cma(
-        CMAES=cmaes, iterations=iterations, corr=svm, sharing_point=sharing_point
+        CMAES=np.array(cmaes),
+        iterations=iterations,
+        corr=svm,
+        sharing_point=sharing_point,
     )
 
 
 def run_cma(
-    CMAES: List[ModularCMAES],
+    CMAES: np.ndarray,
     iterations: int,
     corr: SVC,
     sharing_point: int,
@@ -217,10 +220,11 @@ def run_cma(
     for _ in range(iterations):
         if sharing_point is not None:
             if _ != 0 and _ % sharing_point == 0:
-                fitnesses = [CMAES[i].parameters.fopt for i in range(len(CMAES))]
-                w, b = np.argmax(fitnesses), np.argmin(fitnesses)
-                CMAES[w].parameters.C = np.copy(CMAES[b].parameters.C)
-                CMAES[w].parameters.sigma = CMAES[b].parameters.sigma
+                fitnesses = np.array([CMAES[i].parameters.fopt for i in range(len(CMAES))])
+                fitnesses_sorted = fitnesses.argsort()
+                CMAES = CMAES[fitnesses_sorted]
+                for j, diff in enumerate(np.linspace(CMAES[0].parameters.lambda_ * .5, -CMAES[0].parameters.lambda_ * .5, len(CMAES), dtype=int)):
+                    CMAES[j].parameters.update_popsize(CMAES[j].parameters.lambda_ + diff)
 
         for i in range(len(CMAES)):
             if corr:
@@ -228,7 +232,7 @@ def run_cma(
                 CMAES[i].parameters.area_coefs = extract_svm_coefs(
                     corr, range(len(lambda_)), i
                 )
-            CMAES[i].step()    
+            CMAES[i].step()
             break_conditions[i] = any(CMAES[i].break_conditions)
 
         if any(break_conditions):
@@ -392,7 +396,7 @@ if __name__ == "__main__":
     elif args.subpop_type == 5:
         # multiple subpopulations, same sizes (hard-coded for now)
         lambda_ = [50, 10, 10, 10, 10, 10]
-        sigma0 = [.2, .05, .05, .05, .05, .05]
+        sigma0 = [0.2, 0.05, 0.05, 0.05, 0.05, 0.05]
 
     print("Subpopulation CMA-ES: start")
     main(

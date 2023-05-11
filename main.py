@@ -228,12 +228,10 @@ def run_cma(
                 CMAES[i].parameters.area_coefs = extract_svm_coefs(
                     corr, range(len(lambda_)), i
                 )
-            break_conditions[i] = CMAES[i].step()
-            # print(break_condition)
-            if not break_conditions[i]:
-                break
+            CMAES[i].step()    
+            break_conditions[i] = any(CMAES[i].break_conditions)
 
-        if not any(break_conditions):
+        if any(break_conditions):
             break
 
         if corr: 
@@ -342,7 +340,7 @@ if __name__ == "__main__":
         "--init_method",
         help="",
         default="uniform",
-        choices=["uniform", "lhs", "sobol", "halton", "center"],
+        choices=["uniform", "lhs", "sobol", "halton", "gaussian", "center"],
         type=str,
     )
     parser.add_argument("-s", "--sigma0", help="", default=0.2, type=float)

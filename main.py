@@ -27,7 +27,7 @@ def initialize_parameters(
     seq_cutoff_factor: int = 1,
     init_threshold: float = 0.2,
     decay_factor: float = 0.995,
-    max_resamples: int = 100,
+    max_resamples: int = 1000,
     active: bool = False,
     elitist: bool = False,
     sequential: bool = False,
@@ -54,7 +54,7 @@ def initialize_parameters(
         subpopulation_target=subpopulation_target,
         area_coefs=area_coefs,  # ub=problem.bounds.ub, lb=problem.bounds.lb,
         budget=budget,
-        target=problem.optimum.y,
+        target=problem.optimum.y + abs(problem.optimum.y)*10e-9,
         n_generations=n_generations,
         sigma0=sigma0,
         a_tpa=a_tpa,
@@ -122,6 +122,8 @@ def initialize_centroids(
                 u_bounds=problem.bounds.ub,
             )
         )
+    elif init_method == "gaussian":
+        return np.random.randn(problem.meta_data.n_variables, sub_pop)
     elif init_method == "center":
         return np.zeros((sub_pop, problem.meta_data.n_variables))
     else:
@@ -190,7 +192,7 @@ def initialize(
             budget=budget,
             lambda_=lambda_[i],
             x0=x0[i],
-            sigma0=sigma0,
+            sigma0=sigma0 if isinstance(sigma0, float) else sigma0[i],
             bound_correction=bound_corr,
             initialization_correction=init_corr,
             svm=svm,
@@ -331,7 +333,7 @@ if __name__ == "__main__":
         "-pt",
         "--subpop_type",
         help="sizes of subpopulations",
-        choices=[1, 2, 3, 4],
+        choices=[1, 2, 3, 4, 5],
         default=1,
         type=int,
     )
@@ -376,7 +378,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # TODO update lambda_ and mu_ arguments for subpopulation
-
+    sigma0 = args.sigma0
     if args.subpop_type == 1:
         # no subpopulations, hard-coded size (hard-coded for now)
         lambda_ = [args.lambda_]
@@ -389,6 +391,10 @@ if __name__ == "__main__":
     elif args.subpop_type == 4:
         # multiple subpopulations, same sizes (hard-coded for now)
         lambda_ = [10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
+    elif args.subpop_type == 5:
+        # multiple subpopulations, same sizes (hard-coded for now)
+        lambda_ = [50, 10, 10, 10, 10, 10]
+        sigma0 = [.2, .05, .05, .05, .05, .05]
 
     print("Subpopulation CMA-ES: start")
     main(
@@ -399,7 +405,7 @@ if __name__ == "__main__":
         budget=int(args.budget * args.dimension),
         lambda_=lambda_,
         init_method=args.init_method,
-        sigma0=args.sigma0,
+        sigma0=sigma0,
         bound_corr=args.bound_corr,
         init_corr=args.init_corr,
         sharing_point=args.info_sharing_point,

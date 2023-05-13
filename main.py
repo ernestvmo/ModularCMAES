@@ -54,7 +54,7 @@ def initialize_parameters(
         subpopulation_target=subpopulation_target,
         area_coefs=area_coefs,  # ub=problem.bounds.ub, lb=problem.bounds.lb,
         budget=budget,
-        target=problem.optimum.y + abs(problem.optimum.y)*10e-9,
+        target=problem.optimum.y + abs(problem.optimum.y) * 10e-9,
         n_generations=n_generations,
         sigma0=sigma0,
         a_tpa=a_tpa,
@@ -217,7 +217,7 @@ def run_cma(
 ):
     break_conditions = [None] * len(lambda_)
 
-    for _ in range(iterations):
+    for iter in range(iterations):
         if sharing_point is not None:
             if _ != 0 and _ % sharing_point == 0:
                 fitnesses = np.array([CMAES[i].parameters.fopt for i in range(len(CMAES))])
@@ -322,7 +322,7 @@ if __name__ == "__main__":
         help="how many iterations to run the algorithm for",
         default=10000,
         type=int,
-    )  # only those two for now
+    )  
     parser.add_argument(
         "-b",
         "--budget",

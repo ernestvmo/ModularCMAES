@@ -110,32 +110,39 @@ def ortho_projection(
     point: np.ndarray,
     predict: SVC.predict,
     target: int,
+    mode: str,
 ):
-    on_segment, intersections = get_intersections(
-        centroid=centroid, point=point, coefs=coefs
-    )
-    if len(on_segment) == 0:
-        return point
-    j = closest_intersect(
-        centroid=centroid, on_segment=on_segment, intersections=intersections
-    )
-    plane = coefs[j][0]
-    vector = point - intersections[j]
-    # projection
-    pj = -np.dot(plane, vector) / np.dot(plane, plane)
-    pj_point = plane * pj + point
-    if (
-        predict([pj_point])[0] != target
-        or len(get_intersections(centroid=centroid, point=pj_point, coefs=coefs)[0]) > 0
-    ):
-        return ortho_projection(
-            centroid=centroid,
-            coefs=coefs,
-            point=pj_point,
-            target=target,
-            predict=predict,
+    try:
+        on_segment, intersections = get_intersections(
+            centroid=centroid, point=point, coefs=coefs
         )
-    return pj_point
+        if len(on_segment) == 0:
+            return point
+        j = closest_intersect(
+            centroid=centroid, on_segment=on_segment, intersections=intersections
+        )
+        if mode == 'svm-i':
+            return intersections[j]
+        plane = coefs[j][0]
+        vector = point - intersections[j]
+        # projection
+        pj = -np.dot(plane, vector) / np.dot(plane, plane)
+        pj_point = plane * pj + point
+        if (
+            predict([pj_point])[0] != target
+            or len(get_intersections(centroid=centroid, point=pj_point, coefs=coefs)[0]) > 0
+        ):
+            return ortho_projection(
+                centroid=centroid,
+                coefs=coefs,
+                point=pj_point,
+                target=target,
+                predict=predict,
+                mode=mode,
+            )
+        return pj_point
+    except np.linalg.LinAlgError:
+        return centroid
 
 
 class ModularCMAES:
@@ -226,7 +233,7 @@ class ModularCMAES:
 
     def sub_area_correction(self, x: np.ndarray, mode: str):
         X = x.T
-        if mode == "svm":
+        if mode == "svm-i" or mode == "svm-o":
             if not isinstance(self.parameters.svm, SVC):
                 raise ValueError("Area bounding object is not set correctly for SVM.")
             Y = self.parameters.svm.predict(X)
@@ -243,6 +250,7 @@ class ModularCMAES:
                     point=X[i],
                     target=self.parameters.subpopulation_target,
                     predict=self.parameters.svm.predict,
+                    mode=self.parameters.initialization_correction
                 )
         else:
             raise ValueError("No correct area correction method selected.")

@@ -265,7 +265,7 @@ class Parameters(AnnotatedStruct):
     sequential: bool = False
     threshold_convergence: bool = False
     initialization_correction: (
-        None, "svm") = None
+        None, "svm-i", "svm-o") = None
     bound_correction: (
         None, "saturate", "unif_resample", "COTN", "toroidal", "mirror") = None
     orthogonal: bool = False

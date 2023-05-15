@@ -292,6 +292,7 @@ class Parameters(AnnotatedStruct):
     svm: TypeVar('SVC') = None
     subpopulation_target: int = None
     area_coefs: list = None
+    improvements: list = []
 
     __modules__ = (
         "active",
@@ -776,6 +777,12 @@ class Parameters(AnnotatedStruct):
         self.best_fopts.append(self.fopt)
         self.best_fitnesses.append(np.max(self.population.f))
         self.median_fitnesses.append(np.median(self.population.f))
+
+    def calculate_improvement(self, low: int, high: int):
+        improvements = []
+        for i in range(low+1, high):
+            improvements.append(abs(self.best_fopts[i-1]-self.best_fopts[i]))
+        return improvements
 
     def calculate_termination_criteria(self) -> None:
         """Method for computing restart criteria.

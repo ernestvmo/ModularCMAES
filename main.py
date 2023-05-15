@@ -152,7 +152,7 @@ def initialize(
     init_method: str,
     sigma0: float,
     init_corr: str,
-    sharing_point: int,
+    sharing: tuple,
     logger_info: dict,
 ):
     problem = ioh.get_problem(
@@ -205,7 +205,7 @@ def initialize(
         CMAES=np.array(cmaes),
         iterations=iterations,
         corr=svm,
-        sharing_point=sharing_point,
+        sharing=sharing,
     )
 
 
@@ -213,18 +213,19 @@ def run_cma(
     CMAES: np.ndarray,
     iterations: int,
     corr: SVC,
-    sharing_point: int,
+    sharing: tuple,
 ):
     break_conditions = [None] * len(lambda_)
 
     for iter in range(iterations):
-        if sharing_point is not None:
-            if _ != 0 and _ % sharing_point == 0:
-                fitnesses = np.array([CMAES[i].parameters.fopt for i in range(len(CMAES))])
-                fitnesses_sorted = fitnesses.argsort()
-                CMAES = CMAES[fitnesses_sorted]
-                for j, diff in enumerate(np.linspace(CMAES[0].parameters.lambda_ * .5, -CMAES[0].parameters.lambda_ * .5, len(CMAES), dtype=int)):
-                    CMAES[j].parameters.update_popsize(CMAES[j].parameters.lambda_ + diff)
+        if sharing is not None:
+            t, r = sharing
+            if iter != 0 and iter % t == 0:
+                improvements = np.array([np.average(CMAES[n].parameters.calculate_improvement(low=iter-int(t), high=iter)) for n in range(len(CMAES))])
+                CMAES = CMAES[improvements.argsort()]
+                if CMAES[-1].parameters.lambda_ > r:
+                    CMAES[0].parameters.update_popsize(CMAES[0].parameters.lambda_ + r)
+                    CMAES[-1].parameters.update_popsize(CMAES[-1].parameters.lambda_ - r)
 
         for i in range(len(CMAES)):
             if corr:
@@ -260,7 +261,7 @@ def main(
     init_method: str,
     sigma0: float,
     init_corr: str,
-    sharing_point: int,
+    sharing: tuple,
     logger_info: dict,
 ):
     # initialize
@@ -275,7 +276,7 @@ def main(
         init_method=init_method,
         sigma0=sigma0,
         init_corr=init_corr,
-        sharing_point=sharing_point,
+        sharing=sharing,
         logger_info=logger_info,
     )
 
@@ -352,7 +353,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-ic",
         "--init_corr",
-        help="Initialization correction, currently only {None, 'svm'}",
+        help="Initialization correction {None, 'svm-i', 'svm-o'}",
         default=None,
         type=str,
     )
@@ -370,10 +371,10 @@ if __name__ == "__main__":
     # parser.add_argument("-p", "--subpop", help="size of subpopulation parents and offspring\neg: [100, 50, 20, 10, 5]", nargs='+', default=None, type=int)
     # parser.add_argument("-sn", "--sub_size", help="number of subpopulation", nargs='?', default=10, type=int)
     parser.add_argument(
-        "-sp",
-        "--info_sharing_point",
+        "-is",
+        "--info_sharing",
         help="when to share info between subpops",
-        nargs="?",
+        nargs="+",
         default=None,
         type=int,
     )
@@ -410,7 +411,7 @@ if __name__ == "__main__":
         sigma0=sigma0,
         bound_corr=args.bound_corr,
         init_corr=args.init_corr,
-        sharing_point=args.info_sharing_point,
+        sharing=args.info_sharing,
         logger_info={"name": args.algo_name, "description": ""},
     )
     print("Subpopulation CMA-ES: complete")

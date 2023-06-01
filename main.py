@@ -223,9 +223,10 @@ def run_cma(
             if iter != 0 and iter % t == 0:
                 improvements = np.array([np.average(CMAES[n].parameters.calculate_improvement(low=iter-int(t), high=iter)) for n in range(len(CMAES))])
                 CMAES = CMAES[improvements.argsort()]
-                if CMAES[-1].parameters.lambda_ > r:
-                    CMAES[0].parameters.update_popsize(CMAES[0].parameters.lambda_ + r)
-                    CMAES[-1].parameters.update_popsize(CMAES[-1].parameters.lambda_ - r)
+                inc = max(int(2*np.floor((CMAES[-1].parameters.lambda_ * r)/2)), 2)
+                if CMAES[-1].parameters.lambda_ - inc >= 2:
+                    CMAES[0].parameters.update_popsize(CMAES[0].parameters.lambda_ + inc)
+                    CMAES[-1].parameters.update_popsize(CMAES[-1].parameters.lambda_ - inc)
 
         for i in range(len(CMAES)):
             if corr:
@@ -376,7 +377,7 @@ if __name__ == "__main__":
         help="when to share info between subpops",
         nargs="+",
         default=None,
-        type=int,
+        type=float,
     )
     args = parser.parse_args()
 

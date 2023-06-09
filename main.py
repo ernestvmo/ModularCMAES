@@ -219,14 +219,15 @@ def run_cma(
 
     for iter in range(iterations):
         if sharing is not None:
-            t, r = sharing
+            t, r, *mode = sharing
+            t, r = int(t), float(r)
             if iter != 0 and iter % t == 0:
                 improvements = np.array([np.average(CMAES[n].parameters.calculate_improvement(low=iter-int(t), high=iter)) for n in range(len(CMAES))])
                 CMAES = CMAES[improvements.argsort()]
                 inc = max(int(2*np.floor((CMAES[-1].parameters.lambda_ * r)/2)), 2)
                 if CMAES[-1].parameters.lambda_ - inc >= 2:
                     CMAES[0].parameters.update_popsize(CMAES[0].parameters.lambda_ + inc)
-                    CMAES[-1].parameters.update_popsize(CMAES[-1].parameters.lambda_ - inc)
+                    if len(mode) > 0 and mode[0] == 'ipop': CMAES[-1].parameters.update_popsize(CMAES[-1].parameters.lambda_ - inc)
 
         for i in range(len(CMAES)):
             if corr:
@@ -299,7 +300,7 @@ if __name__ == "__main__":
         "-pid",
         "--problem_id",
         help="decide which BBOB problem to run CMAES on",
-        choices=[3, 4],
+        choices=list(range(1, 25)),
         default=3,
         type=int,
     )  # only those two for now
@@ -377,7 +378,6 @@ if __name__ == "__main__":
         help="when to share info between subpops",
         nargs="+",
         default=None,
-        type=float,
     )
     args = parser.parse_args()
 
